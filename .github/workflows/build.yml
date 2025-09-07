@@ -8,11 +8,45 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Build APK with Buildozer
-      uses: ArtemSBulgakov/buildozer-action@v1
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        workdir: .
-        buildozer_version: stable
+        python-version: '3.9'
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          zip \
+          unzip \
+          openjdk-11-jdk \
+          autoconf \
+          libtool \
+          pkg-config \
+          zlib1g-dev \
+          libncurses-dev \
+          cmake \
+          libffi-dev \
+          libssl-dev \
+          git \
+          python3-venv \
+          python3-pip
+        
+    - name: Create virtual environment
+      run: |
+        python3 -m venv venv
+        source venv/bin/activate
+        
+    - name: Install Python dependencies in virtual environment
+      run: |
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install buildozer cython
+        
+    - name: Build APK
+      run: |
+        source venv/bin/activate
+        buildozer android debug
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
