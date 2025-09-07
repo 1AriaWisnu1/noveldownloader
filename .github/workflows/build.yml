@@ -3,7 +3,7 @@ on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04  # Use Ubuntu 20.04 for better compatibility
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -11,37 +11,29 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.8'
+        python-version: '3.9'
         
-    - name: Install basic dependencies
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y zip unzip openjdk-8-jdk git python3-pip
+        sudo apt-get install -y zip unzip openjdk-11-jdk git python3-pip
         
-    - name: Install Buildozer
+    - name: Install build tools
       run: |
-        pip install buildozer
+        pip install python-for-android
         
-    - name: Build APK with retry (may take 30-45 minutes)
+    - name: Build using python-for-android
       run: |
-        # Buildozer will handle Android SDK download automatically
-        # This may take a long time but usually works
-        timeout 2700 buildozer android debug || echo "Build may have timed out, but let's check results"
+        # Create a simple build script
+        echo 'from pythonforandroid.toolchain import APKBuilder' > build_script.py
+        echo 'import os' >> build_script.py
+        echo 'builder = APKBuilder()' >> build_script.py
+        echo 'builder.build()' >> build_script.py
         
-    - name: Check for APK and upload
-      run: |
-        if ls bin/*.apk 1> /dev/null 2>&1; then
-          echo "APK found! Build successful."
-          ls -la bin/
-        else
-          echo "No APK found. Build may have failed."
-          # Exit with success anyway to see logs
-          exit 0
-        fi
+        python build_script.py
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: novel-downloader-apk
-        path: bin/
-        if-no-files-found: ignore
+        path: bin/*.apk
