@@ -3,7 +3,7 @@ on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04  # Use Ubuntu 20.04 for better compatibility
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -11,7 +11,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.8'  # Use Python 3.8 for better compatibility
         
     - name: Install system dependencies
       run: |
@@ -19,57 +19,37 @@ jobs:
         sudo apt-get install -y \
           zip \
           unzip \
-          openjdk-11-jdk \
+          openjdk-8-jdk \  # JDK 8 works better with Android tools
           autoconf \
           libtool \
           pkg-config \
           zlib1g-dev \
-          libncurses-dev \
+          libncurses5-dev \
+          libncursesw5-dev \
+          libtinfo5 \
           cmake \
           libffi-dev \
           libssl-dev \
           git \
           python3-venv \
-          python3-pip \
-          wget \
-          curl
+          python3-pip
         
     - name: Create virtual environment
       run: |
         python3 -m venv venv
         source venv/bin/activate
         
-    - name: Install Python dependencies in virtual environment
+    - name: Install Python dependencies
       run: |
         source venv/bin/activate
         pip install --upgrade pip
         pip install buildozer cython
         
-    - name: Pre-download Android SDK components
+    - name: Build APK with retry (may take 30+ minutes)
       run: |
         source venv/bin/activate
-        # Initialize buildozer to create the directory structure
-        buildozer init || true
-        
-        # Download Android SDK command-line tools
-        mkdir -p ~/.buildozer/android/platform/android-sdk
-        cd ~/.buildozer/android/platform/android-sdk
-        
-        # Download SDK tools
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        unzip -q cmdline-tools.zip
-        rm cmdline-tools.zip
-        mkdir -p cmdline-tools/latest
-        mv cmdline-tools/* cmdline-tools/latest/
-        rmdir cmdline-tools
-        
-        # Accept licenses
-        yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        
-    - name: Build APK
-      run: |
-        source venv/bin/activate
-        buildozer -v android debug
+        # Buildozer will automatically download Android SDK and build tools
+        buildozer android debug || buildozer android debug  # Try twice in case of timeouts
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
