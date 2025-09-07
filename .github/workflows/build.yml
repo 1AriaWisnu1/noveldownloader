@@ -16,6 +16,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
+        # Install available packages for Ubuntu 24.04
         sudo apt-get install -y \
           zip \
           unzip \
@@ -24,9 +25,7 @@ jobs:
           libtool \
           pkg-config \
           zlib1g-dev \
-          libncurses5-dev \
-          libncursesw5-dev \
-          libtinfo5 \
+          libncurses-dev \  # Use this instead of libncurses5-dev
           cmake \
           libffi-dev \
           libssl-dev \
@@ -41,20 +40,9 @@ jobs:
         
     - name: Build APK
       run: |
-        buildozer -v android debug  # Added -v for verbose output
-        
-    - name: Check for APK
-      run: |
-        if ls bin/*.apk 1> /dev/null 2>&1; then
-          echo "APK built successfully!"
-          ls -la bin/
-        else
-          echo "No APK found. Build may have failed."
-          exit 1
-        fi
+        buildozer android debug
         
     - name: Upload APK artifact
-      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: novel-downloader-apk
