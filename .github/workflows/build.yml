@@ -6,10 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4  # Updated to v4
       
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5  # Updated to v5
       with:
         python-version: '3.9'
         
@@ -33,7 +33,7 @@ jobs:
         
     - name: Install Buildozer
       run: |
-        pip install --user buildozer
+        pip install buildozer
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         
     - name: Build APK
@@ -42,7 +42,7 @@ jobs:
         ls -la bin/
         
     - name: Upload APK artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # Updated to v4
       with:
         name: novel-downloader-apk
         path: bin/*.apk
