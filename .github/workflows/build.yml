@@ -13,43 +13,18 @@ jobs:
       with:
         python-version: '3.9'
         
-    - name: Install system dependencies
+    - name: Install basic dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y \
-          zip \
-          unzip \
-          openjdk-11-jdk \
-          autoconf \
-          libtool \
-          pkg-config \
-          zlib1g-dev \
-          libncurses-dev \
-          cmake \
-          libffi-dev \
-          libssl-dev \
-          git \
-          python3-venv \
-          python3-pip \
-          wget \
-          curl
+        sudo apt-get install -y zip unzip openjdk-11-jdk git python3-pip
         
-    - name: Create virtual environment
+    - name: Install Buildozer
       run: |
-        python3 -m venv venv
-        source venv/bin/activate
+        pip install buildozer
         
-    - name: Install Python dependencies in virtual environment
+    - name: Build APK (Be patient - 30-45 minutes)
       run: |
-        source venv/bin/activate
-        pip install --upgrade pip
-        pip install buildozer cython
-        
-    - name: Build APK (Let Buildozer handle Android SDK automatically)
-      run: |
-        source venv/bin/activate
-        # Buildozer will automatically download all required Android components
-        buildozer -v android debug
+        buildozer android debug
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
