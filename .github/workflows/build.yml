@@ -6,10 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  # Updated to v4
+      uses: actions/checkout@v4
       
     - name: Set up Python
-      uses: actions/setup-python@v5  # Updated to v5
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
         
@@ -19,7 +19,7 @@ jobs:
         sudo apt-get install -y \
           zip \
           unzip \
-          openjdk-8-jdk \
+          openjdk-11-jdk \
           autoconf \
           libtool \
           pkg-config \
@@ -36,13 +36,24 @@ jobs:
         pip install buildozer
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         
-    - name: Build APK
+    - name: Build APK with retry
       run: |
-        buildozer android debug
-        ls -la bin/
+        # Try building with more verbose output
+        buildozer -v android debug || echo "Build failed, checking logs..."
+        
+    - name: Check build results
+      run: |
+        if [ -f bin/*.apk ]; then
+          echo "APK built successfully!"
+          ls -la bin/
+        else
+          echo "No APK found. Build failed."
+          exit 1
+        fi
         
     - name: Upload APK artifact
-      uses: actions/upload-artifact@v4  # Updated to v4
+      if: success()
+      uses: actions/upload-artifact@v4
       with:
         name: novel-downloader-apk
         path: bin/*.apk
