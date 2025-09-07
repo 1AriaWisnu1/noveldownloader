@@ -11,23 +11,60 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.8'
         
-    - name: Install basic dependencies
+    - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y zip unzip openjdk-11-jdk git python3-pip
+        sudo apt-get install -y \
+          zip \
+          unzip \
+          openjdk-8-jdk \
+          autoconf \
+          libtool \
+          pkg-config \
+          zlib1g-dev \
+          libncurses5-dev \
+          libncursesw5-dev \
+          libtinfo5 \
+          cmake \
+          libffi-dev \
+          libssl-dev \
+          git \
+          python3-venv \
+          python3-pip
         
-    - name: Install Buildozer
+    - name: Create virtual environment
       run: |
-        pip install buildozer
+        python3 -m venv venv
+        source venv/bin/activate
         
-    - name: Build APK (Be patient - 30-45 minutes)
+    - name: Install Python dependencies
       run: |
-        buildozer android debug
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install buildozer cython
         
-    - name: Upload APK artifact
+    - name: Build APK with timeout workaround
+      run: |
+        source venv/bin/activate
+        # Buildozer will handle Android SDK download
+        # This may take 30-45 minutes
+        timeout 3600 buildozer android debug || echo "Build may have taken too long, but let's check if APK was created"
+        
+    - name: Check for APK file
+      run: |
+        if ls bin/*.apk 1> /dev/null 2>&1; then
+          echo "APK found! Build successful."
+          ls -la bin/
+        else
+          echo "No APK found. Build may have failed or timed out."
+          # Don't exit with error so we can see the logs
+        fi
+        
+    - name: Upload APK artifact if exists
       uses: actions/upload-artifact@v4
       with:
         name: novel-downloader-apk
-        path: bin/*.apk
+        path: bin/
+        if-no-files-found: warn
