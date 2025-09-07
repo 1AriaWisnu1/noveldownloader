@@ -162,4 +162,9 @@ class NovelDownloaderApp(App):
         App.get_running_app().stop()
 
 if __name__ == '__main__':
+
     NovelDownloaderApp().run()
+    # Add this to your main.py at the very bottom to test syntax
+if __name__ == '__main__':
+    # Simple syntax test
+    print("Syntax check passed")
