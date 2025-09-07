@@ -3,7 +3,7 @@ on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04  # Use Ubuntu 20.04 for better compatibility
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -11,7 +11,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.8'  # Use Python 3.8 for better compatibility
+        python-version: '3.9'
         
     - name: Install system dependencies
       run: |
@@ -19,37 +19,37 @@ jobs:
         sudo apt-get install -y \
           zip \
           unzip \
-          openjdk-8-jdk \  # JDK 8 works better with Android tools
+          openjdk-11-jdk \
           autoconf \
           libtool \
           pkg-config \
           zlib1g-dev \
-          libncurses5-dev \
-          libncursesw5-dev \
-          libtinfo5 \
+          libncurses-dev \
           cmake \
           libffi-dev \
           libssl-dev \
           git \
           python3-venv \
-          python3-pip
+          python3-pip \
+          wget \
+          curl
         
     - name: Create virtual environment
       run: |
         python3 -m venv venv
         source venv/bin/activate
         
-    - name: Install Python dependencies
+    - name: Install Python dependencies in virtual environment
       run: |
         source venv/bin/activate
         pip install --upgrade pip
         pip install buildozer cython
         
-    - name: Build APK with retry (may take 30+ minutes)
+    - name: Build APK (Let Buildozer handle Android SDK automatically)
       run: |
         source venv/bin/activate
-        # Buildozer will automatically download Android SDK and build tools
-        buildozer android debug || buildozer android debug  # Try twice in case of timeouts
+        # Buildozer will automatically download all required Android components
+        buildozer -v android debug
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
