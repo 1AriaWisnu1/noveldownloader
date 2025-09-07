@@ -11,7 +11,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.8'
+        python-version: '3.9'
         
     - name: Install system dependencies
       run: |
@@ -19,52 +19,62 @@ jobs:
         sudo apt-get install -y \
           zip \
           unzip \
-          openjdk-8-jdk \
+          openjdk-11-jdk \
           autoconf \
           libtool \
           pkg-config \
           zlib1g-dev \
-          libncurses5-dev \
-          libncursesw5-dev \
-          libtinfo5 \
+          libncurses-dev \
           cmake \
           libffi-dev \
           libssl-dev \
           git \
           python3-venv \
-          python3-pip
+          python3-pip \
+          wget \
+          curl
         
     - name: Create virtual environment
       run: |
         python3 -m venv venv
         source venv/bin/activate
         
-    - name: Install Python dependencies
+    - name: Install Python dependencies in virtual environment
       run: |
         source venv/bin/activate
         pip install --upgrade pip
         pip install buildozer cython
         
-    - name: Build APK with timeout workaround
+    - name: Accept Android licenses before build
       run: |
         source venv/bin/activate
-        # Buildozer will handle Android SDK download
-        # This may take 30-45 minutes
-        timeout 3600 buildozer android debug || echo "Build may have taken too long, but let's check if APK was created"
+        # Initialize buildozer to create the directory structure
+        buildozer init || true
         
-    - name: Check for APK file
+        # Create the Android SDK directory structure
+        mkdir -p ~/.buildozer/android/platform/android-sdk
+        
+        # Download and setup command line tools
+        cd ~/.buildozer/android/platform/android-sdk
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+        unzip -q cmdline-tools.zip
+        rm cmdline-tools.zip
+        mkdir -p cmdline-tools/latest
+        mv cmdline-tools/* cmdline-tools/latest/ || true
+        
+        # Accept all Android licenses
+        yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        
+        # Install specific build tools version that works
+        ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" "platform-tools"
+        
+    - name: Build APK
       run: |
-        if ls bin/*.apk 1> /dev/null 2>&1; then
-          echo "APK found! Build successful."
-          ls -la bin/
-        else
-          echo "No APK found. Build may have failed or timed out."
-          # Don't exit with error so we can see the logs
-        fi
+        source venv/bin/activate
+        buildozer -v android debug
         
-    - name: Upload APK artifact if exists
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: novel-downloader-apk
-        path: bin/
-        if-no-files-found: warn
+        path: bin/*.apk
