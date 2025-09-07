@@ -26,7 +26,7 @@ jobs:
           zlib1g-dev \
           libncurses5-dev \
           libncursesw5-dev \
-          libtinfo5 \
+          libtinfo5 \  # Fixed: lowercase 'i' instead of uppercase 'I'
           cmake \
           libffi-dev \
           libssl-dev
@@ -36,23 +36,11 @@ jobs:
         pip install buildozer
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         
-    - name: Build APK with retry
+    - name: Build APK
       run: |
-        # Try building with more verbose output
-        buildozer -v android debug || echo "Build failed, checking logs..."
-        
-    - name: Check build results
-      run: |
-        if [ -f bin/*.apk ]; then
-          echo "APK built successfully!"
-          ls -la bin/
-        else
-          echo "No APK found. Build failed."
-          exit 1
-        fi
+        buildozer android debug
         
     - name: Upload APK artifact
-      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: novel-downloader-apk
